@@ -1,15 +1,7 @@
 /*
-- CONNECTIONS: nRF24L01 Modules See:
 
-http://arduino-info.wikispaces.com/Nrf24L01-2.4GHz-HowTo
-  1 - GND
-  2 - VCC 3.3V !!! NOT 5V
-  3 - CE to Arduino pin 9
-  4 - CSN to Arduino pin 10
-  5 - SCK to Arduino pin 13
-  6 - MOSI to Arduino pin 11
-  7 - MISO to Arduino pin 12
-  8 - UNUSED
+  nRF24L01: http://arduino-info.wikispaces.com/Nrf24L01-2.4GHz-HowTo
+  VCC 3.3V !!! NOT 5V
 
  Comandos:
   joystick esquerdo:
@@ -21,7 +13,6 @@ http://arduino-info.wikispaces.com/Nrf24L01-2.4GHz-HowTo
     esquerda/direita:
     botão:
 
-
 */
 
 #include <SPI.h>
@@ -29,7 +20,22 @@ http://arduino-info.wikispaces.com/Nrf24L01-2.4GHz-HowTo
 #include <RF24.h>
 
 #define CE_PIN   9
+
+// Arduino MEGA
+#if defined(__AVR_ATmega2560__)
+#define CSN_PIN 53
+#define SCK_PIN 52
+#define MOSI_PIN 51
+#define MISO_PIN 50
+#endif
+
+// Arduino Uno, Nano e Duemilanove
+#if defined(__AVR_ATmega328P__)
 #define CSN_PIN 10
+#define SCK_PIN 13
+#define MOSI_PIN 11
+#define MISO_PIN 12
+#endif
 
 const uint64_t pipe = 0xE8E8F0F0E1LL;
 
@@ -61,13 +67,25 @@ void setup() {
 }
 
 void loop() {
-  dado_controle.X1 = analogRead(A1);
-  dado_controle.Y1 = analogRead(A0);
-  dado_controle.botao1 = digitalRead(2);
+  dado_controle.X1 = analogRead(A0);
+  dado_controle.Y1 = analogRead(A1);
+  dado_controle.botao1 = !digitalRead(2);
 
-  dado_controle.X2 = analogRead(A3);
-  dado_controle.Y2 = analogRead(A2);
-  dado_controle.botao2 = digitalRead(3);
+  dado_controle.X2 = analogRead(A2);
+  dado_controle.Y2 = analogRead(A3);
+  dado_controle.botao2 = !digitalRead(3);
+
+  Serial.print(millis()); Serial.print(" ms: ");
+   
+  Serial.print("X1: "); Serial.print(dado_controle.X1); Serial.print("\t");
+  Serial.print("Y1: "); Serial.print(dado_controle.Y1); Serial.print("\t");
+  Serial.print("botao1: "); Serial.print(dado_controle.botao1); Serial.print("\t");
+   
+  Serial.print("X2: "); Serial.print(dado_controle.X2); Serial.print("\t");
+  Serial.print("Y2: "); Serial.print(dado_controle.Y2); Serial.print("\t");
+  Serial.print("botao2: "); Serial.print(dado_controle.botao2); Serial.print("\t");  
+
+  Serial.println();
   
   radio.write(&dado_controle, sizeof(dado_controle));
 }

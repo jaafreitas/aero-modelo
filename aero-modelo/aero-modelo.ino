@@ -1,16 +1,8 @@
 /*
-- CONNECTIONS: nRF24L01 Modules See:
-
-http://arduino-info.wikispaces.com/Nrf24L01-2.4GHz-HowTo
-  1 - GND
-  2 - VCC 3.3V !!! NOT 5V
-  3 - CE to Arduino pin 9
-  4 - CSN to Arduino pin 10
-  5 - SCK to Arduino pin 13p
-  6 - MOSI to Arduino pin 11
-  7 - MISO to Arduino pin 12
-  8 - UNUSED
-
+  
+  nRF24L01: http://arduino-info.wikispaces.com/Nrf24L01-2.4GHz-HowTo
+  VCC 3.3V !!! NOT 5V
+  
 */
 
 #include <SPI.h>
@@ -19,6 +11,9 @@ http://arduino-info.wikispaces.com/Nrf24L01-2.4GHz-HowTo
 
 #define CE_PIN   9
 #define CSN_PIN 10
+#define SCK_PIN 13
+#define MOSI_PIN 11
+#define MISO_PIN 12
 
 const uint64_t pipe = 0xE8E8F0F0E1LL;
 
@@ -48,19 +43,19 @@ void setup() {
 }
 
 void loop() {
- if (radio.available()) {
-   radio.read(&dado_controle, sizeof(dado_controle));
-   Serial.print(millis()); Serial.print(" ms: ");
+  if (radio.available()) {
+    radio.read(&dado_controle, sizeof(dado_controle));
+    Serial.print(millis()); Serial.print(" ms: ");
    
-   Serial.print("X1: "); Serial.print(dado_controle.X1); Serial.print("\t");
-   Serial.print("Y1: "); Serial.print(dado_controle.Y1); Serial.print("\t");
-   Serial.print("botao1: "); Serial.print(dado_controle.botao1); Serial.print("\t");
+    Serial.print("X1: "); Serial.print(dado_controle.X1); Serial.print("\t");
+    Serial.print("Y1: "); Serial.print(dado_controle.Y1); Serial.print("\t");
+    Serial.print("botao1: "); Serial.print(dado_controle.botao1); Serial.print("\t");
    
-   Serial.print("X2: "); Serial.print(dado_controle.X2); Serial.print("\t");
-   Serial.print("Y2: "); Serial.print(dado_controle.Y2); Serial.print("\t");
-   Serial.print("botao2: "); Serial.print(dado_controle.botao2); Serial.print("\t");
-   
-   Serial.println();
- }
+    Serial.print("X2: "); Serial.print(dado_controle.X2); Serial.print("\t");
+    Serial.print("Y2: "); Serial.print(dado_controle.Y2); Serial.print("\t");
+    Serial.print("botao2: "); Serial.print(dado_controle.botao2); Serial.print("\t");
+
+    Serial.println();
+  }
 }
 
