@@ -3,22 +3,12 @@
   nRF24L01: http://arduino-info.wikispaces.com/Nrf24L01-2.4GHz-HowTo
   VCC 3.3V !!! NOT 5V
 
- Comandos:
-  joystick esquerdo:
-    frente/trás: 
-    esquerda/direita:
-    botão:
-  joystick direito:
-    frente/trás: 
-    esquerda/direita:
-    botão:
-
 */
 
 #include <RF24.h>
 #include <TimeLib.h>
 
-#define CE_PIN   9
+#define CE_PIN 9
 
 // Arduino MEGA
 #if defined(__AVR_ATmega2560__)
@@ -31,10 +21,17 @@
 // Arduino Uno, Nano e Duemilanove
 #if defined(__AVR_ATmega328P__)
 #define CSN_PIN 10
-#define SCK_PIN 13
 #define MOSI_PIN 11
 #define MISO_PIN 12
+#define SCK_PIN 13
 #endif
+
+#define JOYX1_PIN A0
+#define JOYY1_PIN A1
+#define JOYBUTTON1_PIN 2
+#define JOYX2_PIN A2
+#define JOYY2_PIN A3
+#define JOYBUTTON2_PIN 3
 
 const uint64_t RFControle = 0xF0F0F0F0CCLL;
 const uint64_t RFAeromodelo = 0xF0F0F0F0AALL;
@@ -75,19 +72,19 @@ void setup() {
   radio.openReadingPipe(1, RFAeromodelo);  
   Serial.println(" Ok!");
 
-  pinMode(2, INPUT_PULLUP);
-  pinMode(3, INPUT_PULLUP);
+  pinMode(JOYBUTTON1_PIN, INPUT_PULLUP);
+  pinMode(JOYBUTTON2_PIN, INPUT_PULLUP);
 }
 
 void loop() {
   dado_controle.id++;
-  dado_controle.X1 = analogRead(A0);
-  dado_controle.Y1 = analogRead(A1);
-  dado_controle.botao1 = !digitalRead(2);
+  dado_controle.X1 = analogRead(JOYX1_PIN);
+  dado_controle.Y1 = analogRead(JOYY1_PIN);
+  dado_controle.botao1 = !digitalRead(JOYBUTTON1_PIN);
 
-  dado_controle.X2 = analogRead(A2);
-  dado_controle.Y2 = analogRead(A3);
-  dado_controle.botao2 = !digitalRead(3);
+  dado_controle.X2 = analogRead(JOYX2_PIN);
+  dado_controle.Y2 = analogRead(JOYY2_PIN);
+  dado_controle.botao2 = !digitalRead(JOYBUTTON2_PIN);
   
   radio.stopListening();
   radio.write(&dado_controle, sizeof(dado_controle));
