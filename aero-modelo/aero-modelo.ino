@@ -5,16 +5,19 @@
 
 */
 
-#include <SPI.h>
-#include <nRF24L01.h>
 #include <RF24.h>
 #include <Servo.h>
 
+#define SERVO1_PIN 5
+#define SERVO2_PIN 6
+#define SERVO3_PIN 7
+#define SERVO4_PIN 8
+
 #define CE_PIN   9
 #define CSN_PIN 10
-#define SCK_PIN 13
 #define MOSI_PIN 11
 #define MISO_PIN 12
+#define SCK_PIN   13
 
 const uint64_t pipe = 0xAABBCCDDEELL;
 
@@ -46,10 +49,10 @@ void setup() {
   radio.startListening();
   Serial.println(" Ok!");
 
-  servo1.attach(4);
-  servo2.attach(5);
-  servo3.attach(6);
-  servo4.attach(7);
+  servo1.attach(SERVO1_PIN);
+  servo2.attach(SERVO2_PIN);
+  servo3.attach(SERVO3_PIN);
+  servo4.attach(SERVO4_PIN);
 }
 
 void loop() {
