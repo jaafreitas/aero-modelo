@@ -25,7 +25,8 @@
 #define GPS_RX_PIN A0
 #define GPS_TX_PIN A1
 
-const uint64_t pipe = 0xAABBCCDDEELL;
+const uint64_t RFControle = 0xF0F0F0F0CCLL;
+const uint64_t RFAeromodelo = 0xF0F0F0F0AALL;
 
 RF24 radio(CE_PIN, CSN_PIN);
 Servo servo1;
@@ -63,9 +64,9 @@ void setup() {
   radio.setAutoAck(false);
   radio.setChannel(108);
   radio.setDataRate(RF24_250KBPS);
-  radio.setPALevel(RF24_PA_MAX);  
-  radio.openReadingPipe(1, pipe);
-  radio.startListening();
+  radio.setPALevel(RF24_PA_MAX);
+  radio.openReadingPipe(1, RFControle);
+  radio.openWritingPipe(RFAeromodelo);  
   Serial.println(" Ok!");
 
   gps_serial.begin(9600);
@@ -96,43 +97,47 @@ void loop() {
       dado_aeromodelo.altitude = gps.f_altitude() == 1000000 ? 0 : gps.f_altitude();
       dado_aeromodelo.velocidade = gps.f_speed_kmph() == TinyGPS::GPS_INVALID_SPEED ? 0 : gps.f_speed_kmph();
       dado_aeromodelo.satelites = gps.satellites() == TinyGPS::GPS_INVALID_SATELLITES ? 0 : gps.satellites();
+
+      radio.stopListening();
+      radio.write(&dado_aeromodelo, sizeof(dado_aeromodelo));
+      radio.startListening();
     }
   }
 
   if (radio.available()) {
     radio.read(&dado_controle, sizeof(dado_controle));
     
-    time_t t = now();
-    static char isotime[30];
-    sprintf(isotime, "%4d-%02d-%02dT%02d:%02d:%02d+00:00", year(t), month(t), day(t), hour(t), minute(t), second(t));
-    Serial.print(isotime); Serial.print(" ");
-
-    Serial.print("gps_inf: "); Serial.print(dado_aeromodelo.gps_inf); Serial.print("\t");
-    
-    Serial.print("pos: ");
-    Serial.print(dado_aeromodelo.latitude, 6);
-    Serial.print(", ");
-    Serial.print(dado_aeromodelo.longitude, 6);
-    Serial.print("\t");        
-
-    Serial.print("altitude: "); Serial.print(dado_aeromodelo.altitude); Serial.print("\t");
-    Serial.print("velocidade: "); Serial.print(dado_aeromodelo.velocidade); Serial.print("\t");
-    Serial.print("satelites: "); Serial.print(dado_aeromodelo.satelites); Serial.print("\t");
-   
-    Serial.print("X1: "); Serial.print(dado_controle.X1); Serial.print("\t");
-    Serial.print("Y1: "); Serial.print(dado_controle.Y1); Serial.print("\t");
-    Serial.print("botao1: "); Serial.print(dado_controle.botao1); Serial.print("\t");
-   
-    Serial.print("X2: "); Serial.print(dado_controle.X2); Serial.print("\t");
-    Serial.print("Y2: "); Serial.print(dado_controle.Y2); Serial.print("\t");
-    Serial.print("botao2: "); Serial.print(dado_controle.botao2); Serial.print("\t");
-
-    Serial.println();
-
-    servo1.write(map(dado_controle.X1, 0, 1023, 0, 179));   
-    servo2.write(map(dado_controle.Y1, 0, 1023, 0, 179));   
-    servo3.write(map(dado_controle.X2, 0, 1023, 0, 179));   
-    servo4.write(map(dado_controle.Y2, 0, 1023, 0, 179));   
+    servo1.write(map(dado_controle.X1, 0, 1023, 0, 179));
+    servo2.write(map(dado_controle.Y1, 0, 1023, 0, 179));
+    servo3.write(map(dado_controle.X2, 0, 1023, 0, 179));
+    servo4.write(map(dado_controle.Y2, 0, 1023, 0, 179));    
   }
+    
+  time_t t = now();
+  static char isotime[30];
+  sprintf(isotime, "%4d-%02d-%02dT%02d:%02d:%02d+00:00", year(t), month(t), day(t), hour(t), minute(t), second(t));
+  Serial.print(isotime); Serial.print(" ");
+
+  Serial.print("gps_inf: "); Serial.print(dado_aeromodelo.gps_inf); Serial.print("\t");
+  
+  Serial.print("pos: ");
+  Serial.print(dado_aeromodelo.latitude, 6);
+  Serial.print(", ");
+  Serial.print(dado_aeromodelo.longitude, 6);
+  Serial.print("\t");        
+
+  Serial.print("altitude: "); Serial.print(dado_aeromodelo.altitude); Serial.print("\t");
+  Serial.print("velocidade: "); Serial.print(dado_aeromodelo.velocidade); Serial.print("\t");
+  Serial.print("satelites: "); Serial.print(dado_aeromodelo.satelites); Serial.print("\t");
+ 
+  Serial.print("X1: "); Serial.print(dado_controle.X1); Serial.print("\t");
+  Serial.print("Y1: "); Serial.print(dado_controle.Y1); Serial.print("\t");
+  Serial.print("botao1: "); Serial.print(dado_controle.botao1); Serial.print("\t");
+ 
+  Serial.print("X2: "); Serial.print(dado_controle.X2); Serial.print("\t");
+  Serial.print("Y2: "); Serial.print(dado_controle.Y2); Serial.print("\t");
+  Serial.print("botao2: "); Serial.print(dado_controle.botao2); Serial.print("\t");
+
+  Serial.println();
 }
 

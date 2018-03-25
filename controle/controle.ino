@@ -16,6 +16,7 @@
 */
 
 #include <RF24.h>
+#include <TimeLib.h>
 
 #define CE_PIN   9
 
@@ -35,7 +36,8 @@
 #define MISO_PIN 12
 #endif
 
-const uint64_t pipe = 0xAABBCCDDEELL;
+const uint64_t RFControle = 0xF0F0F0F0CCLL;
+const uint64_t RFAeromodelo = 0xF0F0F0F0AALL;
 
 RF24 radio(CE_PIN, CSN_PIN);
 
@@ -48,6 +50,17 @@ struct dado_controle {
   bool botao2;
 } dado_controle;
 
+struct dado_aeromodelo {
+  unsigned long gps_inf;
+  time_t horario;
+  float latitude;
+  float longitude;
+  float altitude;
+  float velocidade;
+  int satelites;
+  
+} dado_aeromodelo;
+
 void setup() {
   Serial.begin(115200);
   
@@ -57,7 +70,8 @@ void setup() {
   radio.setChannel(108); //108 - 2.508 Ghz //0-124 2.4gHz-2.5gHz
   radio.setDataRate(RF24_250KBPS);
   radio.setPALevel(RF24_PA_MAX);
-  radio.openWritingPipe(pipe);
+  radio.openWritingPipe(RFControle);
+  radio.openReadingPipe(1, RFAeromodelo);  
   Serial.println(" Ok!");
 
   pinMode(2, INPUT_PULLUP);
@@ -72,9 +86,33 @@ void loop() {
   dado_controle.X2 = analogRead(A2);
   dado_controle.Y2 = analogRead(A3);
   dado_controle.botao2 = !digitalRead(3);
+  
+  radio.stopListening();
+  radio.write(&dado_controle, sizeof(dado_controle));
+  radio.startListening();  
 
-  Serial.print(millis()); Serial.print(" ms: ");
-   
+  if (radio.available()) {
+    radio.read(&dado_aeromodelo, sizeof(dado_aeromodelo));
+    setTime(dado_aeromodelo.horario);
+  }
+  
+  time_t t = now();
+  static char isotime[30];
+  sprintf(isotime, "%4d-%02d-%02dT%02d:%02d:%02d+00:00", year(t), month(t), day(t), hour(t), minute(t), second(t));
+  Serial.print(isotime); Serial.print(" ");
+
+  Serial.print("gps_inf: "); Serial.print(dado_aeromodelo.gps_inf); Serial.print("\t");
+  
+  Serial.print("pos: ");
+  Serial.print(dado_aeromodelo.latitude, 6);
+  Serial.print(", ");
+  Serial.print(dado_aeromodelo.longitude, 6);
+  Serial.print("\t");        
+
+  Serial.print("altitude: "); Serial.print(dado_aeromodelo.altitude); Serial.print("\t");
+  Serial.print("velocidade: "); Serial.print(dado_aeromodelo.velocidade); Serial.print("\t");
+  Serial.print("satelites: "); Serial.print(dado_aeromodelo.satelites); Serial.print("\t");
+  
   Serial.print("X1: "); Serial.print(dado_controle.X1); Serial.print("\t");
   Serial.print("Y1: "); Serial.print(dado_controle.Y1); Serial.print("\t");
   Serial.print("botao1: "); Serial.print(dado_controle.botao1); Serial.print("\t");
@@ -83,8 +121,6 @@ void loop() {
   Serial.print("Y2: "); Serial.print(dado_controle.Y2); Serial.print("\t");
   Serial.print("botao2: "); Serial.print(dado_controle.botao2); Serial.print("\t");  
 
-  Serial.println();
-  
-  radio.write(&dado_controle, sizeof(dado_controle));
+  Serial.println();  
 }
 
