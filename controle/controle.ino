@@ -37,7 +37,7 @@
 #define MISO_PIN 12
 #endif
 
-const uint64_t pipe = 0xE8E8F0F0E1LL;
+const uint64_t pipe = 0xAABBCCDDEELL;
 
 RF24 radio(CE_PIN, CSN_PIN);
 
