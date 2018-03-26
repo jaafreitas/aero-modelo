@@ -9,6 +9,7 @@
 #include <TimeLib.h>
 
 //#define DISPLAY_SSD1306
+//#define DISPLAY_LCD16x2
 
 #define CE_PIN 9
 
@@ -42,6 +43,11 @@ const uint64_t RFAeromodelo = 0xF0F0F0F0AALL;
 #include <Adafruit_SSD1306.h>
 #define OLED_RESET 4
 Adafruit_SSD1306 display(OLED_RESET);
+#endif
+
+#ifdef DISPLAY_LCD16x2
+#include <Adafruit_LiquidCrystal.h>
+Adafruit_LiquidCrystal display(0x20);
 #endif
 
 RF24 radio(CE_PIN, CSN_PIN);
@@ -86,19 +92,39 @@ void setup() {
 #ifdef DISPLAY_SSD1306
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 #endif
+#ifdef DISPLAY_LCD16x2
+  display.begin (16, 2);
+#endif
 }
 
-void displayLCD(time_t t) {
-#ifdef DISPLAY_SSD1306
+void displayLCD() {  
   static unsigned long tempoAnterior = 0;
   unsigned long tempoAtual = millis();
   if (tempoAtual - tempoAnterior >= 1000) {
+
+#ifdef DISPLAY_LCD16x2
+    display.clear();
+    display.setCursor(0,0);
+    display.print(dado_aeromodelo.latitude, 6); display.print(" ");
+    char displayalt[5];
+    sprintf(displayalt, "%5d", (int)dado_aeromodelo.altitude);
+    display.print(displayalt);
+
+    display.setCursor(0,1);
+    display.print(dado_aeromodelo.longitude, 6); display.print(" ");
+    char displayvel[5];
+    sprintf(displayvel, "%5d", (int)dado_aeromodelo.velocidade);
+    display.print(displayvel);
+#endif
+    
+#ifdef DISPLAY_SSD1306
     display.clearDisplay();
     display.setTextColor(WHITE);
     display.setCursor(0,0);
   
     display.setTextSize(1);
-    static char displaytime[24];
+    char displaytime[24];
+    time_t t = now();
     sprintf(displaytime, "%02d/%02d/%4d %02d:%02d:%02d", day(t), month(t), year(t), hour(t), minute(t), second(t));  
     display.println(displaytime);
     
@@ -115,10 +141,10 @@ void displayLCD(time_t t) {
     display.print(F(" | sat ")); display.println(dado_aeromodelo.satelites);
     
     display.display();
+#endif
     
     tempoAnterior = tempoAtual;
   }  
-#endif
 }
 
 void loop() {
@@ -139,11 +165,10 @@ void loop() {
     radio.read(&dado_aeromodelo, sizeof(dado_aeromodelo));
     setTime(dado_aeromodelo.horario);
   }
+
+  displayLCD();
   
-  time_t t = now();
-  char isotime[30];
-  sprintf(isotime, "%4d-%02d-%02dT%02d:%02d:%02d+00:00", year(t), month(t), day(t), hour(t), minute(t), second(t));
-  Serial.print(isotime); Serial.print(" ");
+  Serial.print(millis()); Serial.print(" ");
 
   Serial.print(F("aeromodelo id: ")); Serial.print(dado_aeromodelo.id); Serial.print("\t");
   
@@ -168,7 +193,5 @@ void loop() {
   Serial.print(F("botao2: ")); Serial.print(dado_controle.botao2); Serial.print("\t");
 
   Serial.println();
-
-  displayLCD(t);
 }
 

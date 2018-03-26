@@ -113,10 +113,7 @@ void loop() {
     servo4.write(map(dado_controle.Y2, 0, 1023, 0, 179));    
   }
 
-  time_t t = now();
-  char isotime[30];
-  sprintf(isotime, "%4d-%02d-%02dT%02d:%02d:%02d+00:00", year(t), month(t), day(t), hour(t), minute(t), second(t));
-  Serial.print(isotime); Serial.print(" ");
+  Serial.print(millis()); Serial.print(" ");
 
   Serial.print(F("aeromodelo id: ")); Serial.print(dado_aeromodelo.id); Serial.print("\t");
   
