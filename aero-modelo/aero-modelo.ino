@@ -114,31 +114,31 @@ void loop() {
   }
 
   time_t t = now();
-  static char isotime[30];
+  char isotime[30];
   sprintf(isotime, "%4d-%02d-%02dT%02d:%02d:%02d+00:00", year(t), month(t), day(t), hour(t), minute(t), second(t));
   Serial.print(isotime); Serial.print(" ");
 
-  Serial.print("aeromodelo id: "); Serial.print(dado_aeromodelo.id); Serial.print("\t");
+  Serial.print(F("aeromodelo id: ")); Serial.print(dado_aeromodelo.id); Serial.print("\t");
   
-  Serial.print("pos: ");
+  Serial.print(F("pos: "));
   Serial.print(dado_aeromodelo.latitude, 6);
-  Serial.print(", ");
+  Serial.print(F(", "));
   Serial.print(dado_aeromodelo.longitude, 6);
-  Serial.print("\t");        
+  Serial.print("\t");
 
-  Serial.print("altitude: "); Serial.print(dado_aeromodelo.altitude); Serial.print("\t");
-  Serial.print("velocidade: "); Serial.print(dado_aeromodelo.velocidade); Serial.print("\t");
-  Serial.print("satelites: "); Serial.print(dado_aeromodelo.satelites); Serial.print("\t");
+  Serial.print(F("altitude: ")); Serial.print(dado_aeromodelo.altitude); Serial.print("\t");
+  Serial.print(F("velocidade: ")); Serial.print(dado_aeromodelo.velocidade); Serial.print("\t");
+  Serial.print(F("satelites: ")); Serial.print(dado_aeromodelo.satelites); Serial.print("\t");
  
-  Serial.print("controel id: "); Serial.print(dado_controle.id); Serial.print("\t");
+  Serial.print(F("controle id: ")); Serial.print(dado_controle.id); Serial.print("\t");
 
-  Serial.print("X1: "); Serial.print(dado_controle.X1); Serial.print("\t");
-  Serial.print("Y1: "); Serial.print(dado_controle.Y1); Serial.print("\t");
-  Serial.print("botao1: "); Serial.print(dado_controle.botao1); Serial.print("\t");
+  Serial.print(F("X1: ")); Serial.print(dado_controle.X1); Serial.print("\t");
+  Serial.print(F("Y1: ")); Serial.print(dado_controle.Y1); Serial.print("\t");
+  Serial.print(F("botao1: ")); Serial.print(dado_controle.botao1); Serial.print("\t");
  
-  Serial.print("X2: "); Serial.print(dado_controle.X2); Serial.print("\t");
-  Serial.print("Y2: "); Serial.print(dado_controle.Y2); Serial.print("\t");
-  Serial.print("botao2: "); Serial.print(dado_controle.botao2); Serial.print("\t");
+  Serial.print(F("X2: ")); Serial.print(dado_controle.X2); Serial.print("\t");
+  Serial.print(F("Y2: ")); Serial.print(dado_controle.Y2); Serial.print("\t");
+  Serial.print(F("botao2: ")); Serial.print(dado_controle.botao2); Serial.print("\t");
 
   Serial.println();
 }

@@ -8,6 +8,8 @@
 #include <RF24.h>
 #include <TimeLib.h>
 
+//#define DISPLAY_SSD1306
+
 #define CE_PIN 9
 
 // Arduino MEGA
@@ -36,6 +38,12 @@
 const uint64_t RFControle = 0xF0F0F0F0CCLL;
 const uint64_t RFAeromodelo = 0xF0F0F0F0AALL;
 
+#ifdef DISPLAY_SSD1306
+#include <Adafruit_SSD1306.h>
+#define OLED_RESET 4
+Adafruit_SSD1306 display(OLED_RESET);
+#endif
+
 RF24 radio(CE_PIN, CSN_PIN);
 
 struct dado_controle {
@@ -62,7 +70,7 @@ struct dado_aeromodelo {
 void setup() {
   Serial.begin(115200);
   Serial.println();  
-  Serial.print("Iniciando radio...");
+  Serial.print(F("Iniciando radio..."));
   radio.begin();
   radio.setAutoAck(false);
   radio.setChannel(108);
@@ -70,10 +78,47 @@ void setup() {
   radio.setPALevel(RF24_PA_MAX);
   radio.openWritingPipe(RFControle);
   radio.openReadingPipe(1, RFAeromodelo);  
-  Serial.println(" Ok!");
+  Serial.println(F(" Ok!"));
 
   pinMode(JOYBUTTON1_PIN, INPUT_PULLUP);
   pinMode(JOYBUTTON2_PIN, INPUT_PULLUP);
+
+#ifdef DISPLAY_SSD1306
+  display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+#endif
+}
+
+void displayLCD(time_t t) {
+#ifdef DISPLAY_SSD1306
+  static unsigned long tempoAnterior = 0;
+  unsigned long tempoAtual = millis();
+  if (tempoAtual - tempoAnterior >= 1000) {
+    display.clearDisplay();
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+  
+    display.setTextSize(1);
+    static char displaytime[24];
+    sprintf(displaytime, "%02d/%02d/%4d %02d:%02d:%02d", day(t), month(t), year(t), hour(t), minute(t), second(t));  
+    display.println(displaytime);
+    
+    display.setTextSize(2);
+    display.print(F("alt ")); display.println(dado_aeromodelo.altitude);
+    display.print(F("vel ")); display.println(dado_aeromodelo.velocidade);
+  
+    display.setTextSize(1);
+    display.print(dado_aeromodelo.latitude, 6);
+    display.print(F(","));
+    display.print(dado_aeromodelo.longitude, 6);
+  
+    display.print(F("id ")); display.print(dado_aeromodelo.id); 
+    display.print(F(" | sat ")); display.println(dado_aeromodelo.satelites);
+    
+    display.display();
+    
+    tempoAnterior = tempoAtual;
+  }  
+#endif
 }
 
 void loop() {
@@ -96,32 +141,34 @@ void loop() {
   }
   
   time_t t = now();
-  static char isotime[30];
+  char isotime[30];
   sprintf(isotime, "%4d-%02d-%02dT%02d:%02d:%02d+00:00", year(t), month(t), day(t), hour(t), minute(t), second(t));
   Serial.print(isotime); Serial.print(" ");
 
-  Serial.print("aeromodelo id: "); Serial.print(dado_aeromodelo.id); Serial.print("\t");
+  Serial.print(F("aeromodelo id: ")); Serial.print(dado_aeromodelo.id); Serial.print("\t");
   
-  Serial.print("pos: ");
+  Serial.print(F("pos: "));
   Serial.print(dado_aeromodelo.latitude, 6);
-  Serial.print(", ");
+  Serial.print(F(", "));
   Serial.print(dado_aeromodelo.longitude, 6);
-  Serial.print("\t");        
+  Serial.print("\t");
 
-  Serial.print("altitude: "); Serial.print(dado_aeromodelo.altitude); Serial.print("\t");
-  Serial.print("velocidade: "); Serial.print(dado_aeromodelo.velocidade); Serial.print("\t");
-  Serial.print("satelites: "); Serial.print(dado_aeromodelo.satelites); Serial.print("\t");
+  Serial.print(F("altitude: ")); Serial.print(dado_aeromodelo.altitude); Serial.print("\t");
+  Serial.print(F("velocidade: ")); Serial.print(dado_aeromodelo.velocidade); Serial.print("\t");
+  Serial.print(F("satelites: ")); Serial.print(dado_aeromodelo.satelites); Serial.print("\t");
  
-  Serial.print("controel id: "); Serial.print(dado_controle.id); Serial.print("\t");
+  Serial.print(F("controle id: ")); Serial.print(dado_controle.id); Serial.print("\t");
 
-  Serial.print("X1: "); Serial.print(dado_controle.X1); Serial.print("\t");
-  Serial.print("Y1: "); Serial.print(dado_controle.Y1); Serial.print("\t");
-  Serial.print("botao1: "); Serial.print(dado_controle.botao1); Serial.print("\t");
+  Serial.print(F("X1: ")); Serial.print(dado_controle.X1); Serial.print("\t");
+  Serial.print(F("Y1: ")); Serial.print(dado_controle.Y1); Serial.print("\t");
+  Serial.print(F("botao1: ")); Serial.print(dado_controle.botao1); Serial.print("\t");
  
-  Serial.print("X2: "); Serial.print(dado_controle.X2); Serial.print("\t");
-  Serial.print("Y2: "); Serial.print(dado_controle.Y2); Serial.print("\t");
-  Serial.print("botao2: "); Serial.print(dado_controle.botao2); Serial.print("\t");
+  Serial.print(F("X2: ")); Serial.print(dado_controle.X2); Serial.print("\t");
+  Serial.print(F("Y2: ")); Serial.print(dado_controle.Y2); Serial.print("\t");
+  Serial.print(F("botao2: ")); Serial.print(dado_controle.botao2); Serial.print("\t");
 
-  Serial.println();  
+  Serial.println();
+
+  displayLCD(t);
 }
 
