@@ -11,24 +11,31 @@
 #include <TimeLib.h>
 #include "src/TinyGPS/TinyGPS.h"
 
+#define ESC_PIN 4
 #define SERVO1_PIN 5
 #define SERVO2_PIN 6
 #define SERVO3_PIN 7
 #define SERVO4_PIN 8
 
-#define CE_PIN     9
-#define CSN_PIN   10
-#define MOSI_PIN  11
-#define MISO_PIN  12
-#define SCK_PIN   13
+#define RF_CE_PIN     9
+#define RF_CSN_PIN   10
+#define RF_MOSI_PIN  11
+#define RF_MISO_PIN  12
+#define RF_SCK_PIN   13
 
 #define GPS_TX_PIN A0
 #define GPS_RX_PIN A1
 
+const int ESC_MIN_SIGNAL = 700;
+const int ESC_START_SIGNAL = 745;
+const int ESC_MAX_SIGNAL = 2000;
+const int ESC_MAX_SIGNAL_ALLOWED = (ESC_START_SIGNAL + 0.10 * (ESC_MAX_SIGNAL - ESC_START_SIGNAL));
+
 const uint64_t RFControle = 0xF0F0F0F0CCLL;
 const uint64_t RFAeromodelo = 0xF0F0F0F0AALL;
 
-RF24 radio(CE_PIN, CSN_PIN);
+RF24 radio(RF_CE_PIN, RF_CSN_PIN);
+Servo esc;
 Servo servo1;
 Servo servo2;
 Servo servo3;
@@ -57,6 +64,15 @@ struct dado_aeromodelo {
   
 } dado_aeromodelo;
 
+void debug(bool motorOn, int mappedValue, int signal) {
+  Serial.print(" motor: "); Serial.print(motorOn ? "on" : "off");
+  Serial.print(" | mapped Value: "); Serial.print(mappedValue);
+  Serial.print(" | signal: "); Serial.print(signal);
+
+  int potencia = max((float)(signal - ESC_START_SIGNAL) / (ESC_MAX_SIGNAL - ESC_START_SIGNAL) * 100, 0);
+  Serial.print(" | potência: "); Serial.print(potencia);  Serial.print("\t");
+}
+
 void setup() {
   Serial.begin(115200);
   Serial.println();
@@ -72,13 +88,28 @@ void setup() {
 
   gps_serial.begin(9600);
 
+  esc.attach(ESC_PIN);
   servo1.attach(SERVO1_PIN);
   servo2.attach(SERVO2_PIN);
   servo3.attach(SERVO3_PIN);
   servo4.attach(SERVO4_PIN);
+
+//  if (digitalRead(3)) {
+//    Serial.println("Ajustando o sinal máximo...");
+//    debug(false, 0, ESC_MAX_SIGNAL);
+//    esc.writeMicroseconds(ESC_MAX_SIGNAL);
+//    delay(5000);
+//
+//    Serial.println("Ajustando o sinal mínimo...");
+//    debug(false, 0, ESC_MIN_SIGNAL);
+//    esc.writeMicroseconds(ESC_MIN_SIGNAL);
+//    delay(2000);
+//  }
 }
 
 void loop() {
+  static bool motorOn = false;
+  
   while (gps_serial.available()) {
     if (gps.encode(gps_serial.read())) {
       dado_aeromodelo.id++;
@@ -106,6 +137,27 @@ void loop() {
   radio.startListening();
   if (radio.available()) {
     radio.read(&dado_controle, sizeof(dado_controle));
+
+    int mappedValue = map(dado_controle.X1, 0, 1023, ESC_MIN_SIGNAL, ESC_MAX_SIGNAL_ALLOWED);
+    int signal;
+
+    // Para ligar o motor é preciso segurar o botão 1 e 2 apertado ao mesmo tempo.
+    if (dado_controle.botao1 && dado_controle.botao2) {
+      motorOn = true;
+      // Iniciando com 10% da potência.
+      signal = ESC_START_SIGNAL + 0.05 * (ESC_MAX_SIGNAL - ESC_START_SIGNAL);
+    }
+    // Só permite controlar o motor após o acionamento.
+    else if (((mappedValue < ESC_START_SIGNAL) && motorOn) || !motorOn)  {
+      motorOn = false;
+      signal = ESC_MIN_SIGNAL;
+    }
+    else {
+      signal = mappedValue;
+    }
+    
+    debug(motorOn, mappedValue, signal);
+    esc.writeMicroseconds(signal);    
     
     servo1.write(map(dado_controle.X1, 0, 1023, 0, 179));
     servo2.write(map(dado_controle.Y1, 0, 1023, 0, 179));
