@@ -11,11 +11,11 @@
 #include <TimeLib.h>
 #include "src/TinyGPS/TinyGPS.h"
 
-#define ESC_PIN 4
-#define SERVO1_PIN 5
-#define SERVO2_PIN 6
-#define SERVO3_PIN 7
-#define SERVO4_PIN 8
+#define ESC_PIN 4                // joystick esquerdo, cima / baixo
+#define SERVO_LEME_PIN 5         // joystick esquerda, direita/esquerda
+#define SERVO_CALDA_PIN 6        // joystick direita, cima/baixo
+#define SERVO_ASA_ESQUERDA_PIN 7 // joystick direito, esquerda/direita
+#define SERVO_ASA_DIREITA_PIN 8  // joystick direito, !esquerda/direita
 
 #define RF_CE_PIN     9
 #define RF_CSN_PIN   10
@@ -29,17 +29,18 @@
 const int ESC_MIN_SIGNAL = 700;
 const int ESC_START_SIGNAL = 745;
 const int ESC_MAX_SIGNAL = 2000;
-const int ESC_MAX_SIGNAL_ALLOWED = (ESC_START_SIGNAL + 0.10 * (ESC_MAX_SIGNAL - ESC_START_SIGNAL));
+const int ESC_MAX_SIGNAL_ALLOWED = ESC_MAX_SIGNAL;
+//const int ESC_MAX_SIGNAL_ALLOWED = (ESC_START_SIGNAL + 0.10 * (ESC_MAX_SIGNAL - ESC_START_SIGNAL));
 
 const uint64_t RFControle = 0xF0F0F0F0CCLL;
 const uint64_t RFAeromodelo = 0xF0F0F0F0AALL;
 
 RF24 radio(RF_CE_PIN, RF_CSN_PIN);
 Servo esc;
-Servo servo1;
-Servo servo2;
-Servo servo3;
-Servo servo4;
+Servo servo_leme;
+Servo servo_calda;
+Servo servo_asa_esquerda;
+Servo servo_asa_direita;
 NeoSWSerial gps_serial(GPS_TX_PIN, GPS_RX_PIN);
 TinyGPS gps;
 
@@ -89,10 +90,10 @@ void setup() {
   gps_serial.begin(9600);
 
   esc.attach(ESC_PIN);
-  servo1.attach(SERVO1_PIN);
-  servo2.attach(SERVO2_PIN);
-  servo3.attach(SERVO3_PIN);
-  servo4.attach(SERVO4_PIN);
+  servo_leme.attach(SERVO_LEME_PIN);
+  servo_calda.attach(SERVO_CALDA_PIN);
+  servo_asa_esquerda.attach(SERVO_ASA_ESQUERDA_PIN);
+  servo_asa_direita.attach(SERVO_ASA_DIREITA_PIN);
 
 //  if (digitalRead(3)) {
 //    Serial.println("Ajustando o sinal máximo...");
@@ -109,7 +110,7 @@ void setup() {
 
 void loop() {
   static bool motorOn = false;
-  
+
   while (gps_serial.available()) {
     if (gps.encode(gps_serial.read())) {
       dado_aeromodelo.id++;
@@ -138,7 +139,7 @@ void loop() {
   if (radio.available()) {
     radio.read(&dado_controle, sizeof(dado_controle));
 
-    int mappedValue = map(dado_controle.X1, 0, 1023, ESC_MIN_SIGNAL, ESC_MAX_SIGNAL_ALLOWED);
+    int mappedValue = map(dado_controle.Y1, 0, 1023, ESC_MIN_SIGNAL, ESC_MAX_SIGNAL_ALLOWED);
     int signal;
 
     // Para ligar o motor é preciso segurar o botão 1 e 2 apertado ao mesmo tempo.
@@ -159,10 +160,10 @@ void loop() {
     debug(motorOn, mappedValue, signal);
     esc.writeMicroseconds(signal);    
     
-    servo1.write(map(dado_controle.X1, 0, 1023, 0, 179));
-    servo2.write(map(dado_controle.Y1, 0, 1023, 0, 179));
-    servo3.write(map(dado_controle.X2, 0, 1023, 0, 179));
-    servo4.write(map(dado_controle.Y2, 0, 1023, 0, 179));    
+    servo_leme.write(map(dado_controle.X1, 0, 1023, 120, 60));
+    servo_calda.write(map(dado_controle.Y2, 0, 1023, 60, 120));
+    servo_asa_esquerda.write(map(dado_controle.X2, 0, 1023, 120, 60));
+    servo_asa_direita.write(map(dado_controle.X2, 0, 1023, 120, 60));    
   }
 
   Serial.print(millis()); Serial.print(" ");
