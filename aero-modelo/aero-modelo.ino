@@ -35,6 +35,10 @@ const int ESC_MAX_SIGNAL_ALLOWED = ESC_MAX_SIGNAL;
 const uint64_t RFControle = 0xF0F0F0F0CCLL;
 const uint64_t RFAeromodelo = 0xF0F0F0F0AALL;
 
+unsigned long ultimo_dado_controle_recebido;
+// Tempo em milisegundos para considerarmos que perdemos a comunicação com o controle.
+const unsigned int timeout_dado_controle = 1000;
+
 RF24 radio(RF_CE_PIN, RF_CSN_PIN);
 Servo esc;
 Servo servo_leme;
@@ -95,6 +99,10 @@ void setup() {
   servo_asa_esquerda.attach(SERVO_ASA_ESQUERDA_PIN);
   servo_asa_direita.attach(SERVO_ASA_DIREITA_PIN);
 
+  ultimo_dado_controle_recebido = millis() - timeout_dado_controle;
+
+  // Rotina de calibração do motor. Habilitar somente quando for necessário
+  // uma nova calibração.
 //  if (digitalRead(3)) {
 //    Serial.println("Ajustando o sinal máximo...");
 //    debug(false, 0, ESC_MAX_SIGNAL);
@@ -137,6 +145,7 @@ void loop() {
 
   radio.startListening();
   if (radio.available()) {
+    ultimo_dado_controle_recebido = millis();
     radio.read(&dado_controle, sizeof(dado_controle));
 
     int mappedValue = map(dado_controle.Y1, 0, 1023, ESC_MIN_SIGNAL, ESC_MAX_SIGNAL_ALLOWED);
@@ -161,11 +170,19 @@ void loop() {
     esc.writeMicroseconds(signal);    
     
     servo_leme.write(map(dado_controle.X1, 0, 1023, 120, 60));
-    servo_calda.write(map(dado_controle.Y2, 0, 1023, 60, 120));
-    servo_asa_esquerda.write(map(dado_controle.X2, 0, 1023, 120, 60));
-    servo_asa_direita.write(map(dado_controle.X2, 0, 1023, 120, 60));    
+    servo_calda.write(map(dado_controle.Y2, 0, 1023, 130, 50));
+    servo_asa_esquerda.write(map(dado_controle.X2, 0, 1023, 140, 60));
+    servo_asa_direita.write(map(dado_controle.X2, 0, 1023, 140, 60));    
   }
-
+  
+  // Perdemos a comunicação com o radio?
+  if (millis() - ultimo_dado_controle_recebido > timeout_dado_controle) {
+    esc.writeMicroseconds(ESC_MIN_SIGNAL);    
+    motorOn = false;
+    Serial.print(F("SEM COMUNICAÇÃO\t"));
+    debug(motorOn, ESC_MIN_SIGNAL, ESC_MIN_SIGNAL);
+  }
+  
   Serial.print(millis()); Serial.print(" ");
 
   Serial.print(F("aeromodelo id: ")); Serial.print(dado_aeromodelo.id); Serial.print("\t");
